@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Eye, QrCode, X } from 'lucide-react';
+import { ChevronLeft, Eye, QrCode, X, ShieldCheck } from 'lucide-react';
 import { MobileNav } from '../components/MobileNav';
 
 const Login: React.FC = () => {
@@ -117,6 +117,15 @@ const Login: React.FC = () => {
                     Don't have an account? <Link to="/signup" className="font-bold text-[#A0522D] hover:underline">Sign Up</Link>
                   </p>
                 </div>
+                
+                {/* Admin Link added here */}
+                <div className="mt-8 pt-4 border-t border-gray-100 flex justify-center">
+                  <Link to="/admin-login" className="flex items-center text-xs text-gray-400 hover:text-primary transition-colors">
+                    <ShieldCheck className="w-3 h-3 mr-1" />
+                    Admin Access
+                  </Link>
+                </div>
+
               </>
             )}
           </div>
