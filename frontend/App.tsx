@@ -11,6 +11,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
+import Checkout from './pages/Checkout';
+import Profile from './pages/Profile';
+import FAQ from './pages/FAQ';
 
 // ScrollToTop component to reset scroll position on route change
 const ScrollToTop = () => {
@@ -42,6 +45,9 @@ const App: React.FC = () => {
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/faq" element={<FAQ />} />
       </Routes>
     </Router>
   );

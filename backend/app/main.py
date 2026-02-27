@@ -13,6 +13,7 @@ origins = [
     "http://localhost:3000",
 ]
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -21,14 +22,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
-from app.api.v1 import auth, products, orders, analytics
+
+from app.api.v1 import auth, products, orders, analytics, addresses, wishlist
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["Orders"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
-
+app.include_router(addresses.router, prefix="/api/v1", tags=["Addresses"])
+app.include_router(wishlist.router, prefix="/api/v1", tags=["Wishlist"])

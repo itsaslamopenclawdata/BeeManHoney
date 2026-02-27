@@ -20,6 +20,17 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4-turbo-preview"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
 
+    # EMAIL - SMTP Configuration
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "BeeManHoney"
+    
+    # ADMIN EMAIL for notifications
+    ADMIN_EMAIL: str = ""
+
     # Additional config (to match .env)
     APP_NAME: str = "BeeManHoney AI"
     APP_VERSION: str = "1.0.0"

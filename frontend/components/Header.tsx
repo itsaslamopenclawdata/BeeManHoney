@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, Search, ShoppingCart, X, User } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Search, ShoppingCart, X, User, LogOut } from 'lucide-react';
+import api from '../services/api';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Load cart count on mount and update when localStorage changes
     const updateCartCount = () => {
       const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
       const totalCount = existingCart.reduce((sum: number, item: any) =>
@@ -16,21 +19,36 @@ export const Header: React.FC = () => {
       setCartCount(totalCount);
     };
 
-    updateCartCount();
-
-    // Listen for storage events (when cart is updated in other tabs)
-    const handleStorageChange = () => {
-      updateCartCount();
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const adminToken = localStorage.getItem('admin_token');
+      setIsLoggedIn(!!token || !!adminToken);
+      setIsAdmin(!!adminToken);
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('cart-updated', handleStorageChange);
+    updateCartCount();
+    checkAuth();
+
+    window.addEventListener('storage', updateCartCount);
+    window.addEventListener('cart-updated', updateCartCount);
+    window.addEventListener('auth-change', checkAuth);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('cart-updated', handleStorageChange);
+      window.removeEventListener('storage', updateCartCount);
+      window.removeEventListener('cart-updated', updateCartCount);
+      window.removeEventListener('auth-change', checkAuth);
     };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('cart');
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    window.dispatchEvent(new Event('auth-change'));
+    navigate('/');
+  };
 
   const navLinks = [
     { name: 'Home', path: '/home' },
@@ -38,6 +56,7 @@ export const Header: React.FC = () => {
     { name: 'About Us', path: '/about' },
     { name: 'Sourcing', path: '/sourcing' },
     { name: 'Recipes', path: '/recipes' },
+    { name: 'FAQ', path: '/faq' },
     { name: 'Contact', path: '/contact' },
   ];
 
@@ -74,11 +93,34 @@ export const Header: React.FC = () => {
           <button aria-label="Search" className="text-text hover:text-primary transition-colors">
             <Search className="h-6 w-6" />
           </button>
-          <Link to="/login" className="text-text hover:text-primary transition-colors hidden md:flex items-center gap-1 font-semibold text-sm">
-            <User className="h-5 w-5" />
-            <span>Login</span>
-          </Link>
-          <Link to="/history" aria-label="Shopping Cart" className="text-text hover:text-primary transition-colors relative">
+          
+          {isLoggedIn ? (
+            <>
+              <Link to="/profile" className="text-text hover:text-primary transition-colors hidden md:flex items-center gap-1 font-semibold text-sm">
+                <User className="h-5 w-5" />
+                <span>Profile</span>
+              </Link>
+              <button 
+                onClick={handleLogout}
+                className="text-text hover:text-red-600 transition-colors hidden md:flex items-center gap-1 font-semibold text-sm"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+              {isAdmin && (
+                <Link to="/admin" className="text-sm font-semibold text-primary hover:underline">
+                  Admin
+                </Link>
+              )}
+            </>
+          ) : (
+            <Link to="/login" className="text-text hover:text-primary transition-colors hidden md:flex items-center gap-1 font-semibold text-sm">
+              <User className="h-5 w-5" />
+              <span>Login</span>
+            </Link>
+          )}
+          
+          <Link to="/checkout" aria-label="Shopping Cart" className="text-text hover:text-primary transition-colors relative">
             <ShoppingCart className="h-6 w-6" />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -110,7 +152,15 @@ export const Header: React.FC = () => {
               {link.name}
             </Link>
           ))}
-          <Link to="/login" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-text hover:text-primary">Login</Link>
+          {isLoggedIn ? (
+            <>
+              <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-text hover:text-primary">Profile</Link>
+              <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="text-sm font-semibold text-red-600 text-left">Logout</button>
+              {isAdmin && <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-primary">Admin Dashboard</Link>}
+            </>
+          ) : (
+            <Link to="/login" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-text hover:text-primary">Login</Link>
+          )}
         </div>
       )}
     </header>
