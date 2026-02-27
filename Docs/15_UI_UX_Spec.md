@@ -1,29 +1,38 @@
 # UI/UX Specifications
 
-## 1. Chat Widget State Machine
+## 1. Visual Language
+-   **Palette**:
+    -   Primary: `Honey Gold (#FFA726)`
+    -   Secondary: `Deep Amber (#D46F00)`
+    -   Text: `Charcoal (#1F2937)`
+    -   Background: `Cream (#FAFAF9)`
+-   **Typography**: `Open Sans` (Body), `Playfair Display` (Headings).
 
-```mermaid
-stateDiagram-v2
-    [*] --> Closed
-    Closed --> Open : Click Icon
-    Open --> Thinking : User Sends Message
-    Thinking --> Streaming : First Token Received
-    Streaming --> Idle : Stream End
-    Idle --> Thinking : User Follow-up
-    Idle --> Closed : Click Close
-```
+## 2. Component Specifications
 
-## 2. Responsive Breakpoints
--   **Mobile**: < 640px (1 column grid, Hamburger menu).
--   **Tablet**: 640px - 1024px (2 column grid).
--   **Desktop**: > 1024px (3 column grid, Sticky Header).
+### 2.1. Header (Sticky)
+-   **Left**: Logo (Icon + Text).
+-   **Center**: Nav Links (Hidden on Mobile).
+-   **Right**: Search, User Profile, Cart (Badge).
+-   **Interaction**: On scroll, add `shadow-md` and `bg-white/90` backdrop blur.
 
-## 3. Accessibility (A11y)
--   **Keyboard Nav**: Chat widget must trap focus when open on mobile.
--   **Screen Readers**: All images must have `alt` tags. Prices must have `aria-label="450 rupees"`.
--   **Focus Indicators**: Visible outlines on all interactive elements.
+### 2.2. Product Card
+-   **Layout**: Vertical Stack.
+-   **Elements**: Image (AspectRatio 1:1), Title (H3), Price (Bold), Add to Cart (Button).
+-   **Hover**: Slight `scale-105` and `shadow-lg` lift effect.
 
-## 4. Style Guide
--   **Primary Color**: `#FFA726` (Honey Gold)
--   **Secondary Color**: `#D46F00` (Amber)
--   **Font**: Open Sans (UI), Playfair Display (Headings)
+### 2.3. AI Chat Widget
+-   **State**: Collapsed (Floating Action Button) -> Expanded (Modal/Panel).
+-   **Animation**: `AnimatePresence` (framer-motion) slide-up.
+-   **Typing Indicator**: "Bee is thinking..." pulsating loader.
+
+## 3. Accessibility (WCAG 2.1 AA)
+-   **Contrast**: All text must maintain 4.5:1 ratio.
+-   **Keyboard**: Focus trap within Chat Widget.
+-   **Semantics**: Use `<article>` for products, `<nav>` for links.
+-   **Images**: `alt` tags mandatory for all product images.
+
+## 4. Responsive Breakpoints
+-   **Mobile**: < 640px (Hamburger Menu, 1 Col Grid).
+-   **Tablet**: 640px - 1024px (2 Col Grid).
+-   **Desktop**: > 1024px (3 Col Grid).

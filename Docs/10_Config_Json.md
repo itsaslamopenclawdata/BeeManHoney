@@ -1,40 +1,46 @@
-# Configuration JSON Schema
+# Configuration Document (config.json)
 
-This file describes the `config.json` or Environment Variable mapping expected by the backend.
+This schema represents the runtime configuration injected via Environment Variables or a JSON file.
 
 ```json
 {
+  "app": {
+    "name": "BeeManHoney AI",
+    "env": "production",
+    "debug": false,
+    "version": "1.0.0"
+  },
   "server": {
     "host": "0.0.0.0",
     "port": 8000,
-    "log_level": "info",
-    "cors_origins": ["http://localhost:5173", "https://beemanhoney.com"]
+    "cors_origins": ["https://beemanhoney.com"]
   },
-  "security": {
-    "jwt_secret": "CHANGE_THIS_IN_PROD",
-    "jwt_algorithm": "HS256",
-    "access_token_expire_minutes": 60
-  },
-  "database": {
-    "url": "postgresql+asyncpg://user:pass@db:5432/beemanhoney",
+  "db": {
+    "host": "beemanhoney-db",
+    "port": 5432,
     "pool_size": 20,
     "max_overflow": 10
   },
   "redis": {
-    "url": "redis://redis:6379/0",
-    "task_queue_name": "celery"
+    "host": "beemanhoney-redis",
+    "port": 6379,
+    "db": 0
   },
   "ai": {
     "openai_api_key": "sk-...",
-    "model_fast": "gpt-3.5-turbo-0125",
-    "model_smart": "gpt-4-turbo-preview",
+    "supervisor_model": "gpt-4-turbo-preview",
+    "worker_model": "gpt-3.5-turbo-0125",
     "embedding_model": "text-embedding-3-small",
-    "langsmith_api_key": "ls-...",
-    "langsmith_tracing": true
+    "temperature": 0.0
   },
-  "feature_flags": {
-    "enable_deep_agents": true,
-    "maintenance_mode": false
+  "auth": {
+    "jwt_secret": "secure-random-string",
+    "algorithm": "HS256",
+    "expire_minutes": 60
   }
 }
 ```
+
+## Environment Variable Mapping
+-   `DATABASE_URL` -> Overrides `db` config.
+-   `OPENAI_API_KEY` -> Overrides `ai.openai_api_key`.

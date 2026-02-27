@@ -1,29 +1,41 @@
-# Master Requirements & Compatibility Matrix
+# Master Consolidations & Dependency Graph
 
 ## 1. Full Stack Compatibility
--   **API Protocol**: REST (JSON) + SSE (EventSource).
--   **Auth**: Bearer Token (JWT).
--   **Validation**: Pydantic v2 (Backend) <-> Zod/Manual (Frontend).
+-   **Protocol**: HTTP/1.1 (REST) + HTTP/2 (SSE).
+-   **Auth**: Bearer Token (JWT HS256).
+-   **Content-Type**: `application/json`.
 
-## 2. Versioning
--   **Frontend**: `v1.0.0`
--   **Backend**: `v1.0.0` (API prefix `/api/v1`)
--   **DB Schema**: Revision `head` (Alembic).
-
-## 3. Architecture Dependency Graph
+## 2. Dependency Graph
 
 ```mermaid
 graph TD
-    React[React Frontend] -->|Axios| FastAPI[FastAPI]
-    FastAPI -->|CRUD| Postgres[(PostgreSQL)]
-    FastAPI -->|Tasks| Redis[(Redis)]
-    Redis -->|Consume| Celery[Celery Worker]
-    Celery -->|State| LangGraph[LangGraph]
-    LangGraph -->|API| OpenAI[OpenAI]
-    Celery -->|Vector Search| Postgres
+    subgraph Frontend [React 18 + Vite]
+        UI[UI Components] --> Router[React Router]
+        Router --> Axios[Axios Client]
+        Router --> SSE[EventSource]
+    end
+
+    subgraph Backend [FastAPI + Python 3.11]
+        Axios -->|REST| API[FastAPI]
+        SSE -->|Streams| API
+        API -->|Validate| Pydantic[Pydantic V2]
+        API -->|ORM| SQLA[SQLAlchemy 2.0]
+        API -->|Task| Redis[Redis PubSub]
+    end
+
+    subgraph Data [Persistence]
+        SQLA -->|Async| DB[(Postgres 16)]
+        DB -->|Vector| PGVector[pgvector]
+        Redis -->|Queue| Celery[Celery Worker]
+    end
+
+    subgraph AI [Agent Runtime]
+        Celery -->|State| LangGraph[LangGraph]
+        LangGraph -->|LLM| OpenAI[GPT-4]
+    end
 ```
 
-## 4. Development Standards
--   **Linting**: ESLint (Frontend) + Ruff (Backend).
--   **Formatting**: Prettier (Frontend) + Black (Backend).
--   **Testing**: Vitest (Frontend) + Pytest (Backend).
+## 3. Deployment constraints
+-   **Docker**: All services share a `bridge` network.
+-   **Volume**: Postgres data must be persisted to `postgres_data` volume.
+-   **Secrets**: Must use Docker Secrets or ENV injection in Prod (Not .env files).

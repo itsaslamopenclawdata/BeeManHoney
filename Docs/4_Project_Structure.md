@@ -1,16 +1,21 @@
 # Project Directory Structure
 
-## 1. Monorepo Layout
+## 1. Monorepo Layout (Strict)
 
 ```text
 /
 ├── Frontend/                   # React Application
+│   ├── public/                 # Static Assets (favicon, manifest)
 │   ├── src/
-│   │   ├── components/         # Reusable UI (Header, Footer)
-│   │   ├── pages/              # Route Components
-│   │   ├── hooks/              # Custom React Hooks (useAuth, useChat)
-│   │   ├── services/           # API Clients (axios instances)
-│   │   └── types/              # TS Interfaces
+│   │   ├── assets/             # Local Images/Fonts (logo.png)
+│   │   ├── components/         # Reusable UI (Header, ProductCard)
+│   │   ├── pages/              # Route Components (Home, Login)
+│   │   ├── hooks/              # Custom Hooks (useAuth, useChat)
+│   │   ├── services/           # Axios & SSE Clients
+│   │   ├── context/            # Global State (AuthContext)
+│   │   ├── types/              # TS Interfaces
+│   │   └── utils/              # Formatting Helpers
+│   ├── .env                    # VITE_API_BASE_URL
 │   ├── vite.config.ts
 │   └── package.json
 │
@@ -23,37 +28,29 @@
 │   │   │       └── chat.py
 │   │   ├── core/               # Configuration
 │   │   │   ├── config.py       # Pydantic Settings
-│   │   │   └── security.py     # JWT Logic
+│   │   │   └── security.py     # JWT & Hashing
 │   │   ├── db/                 # Database
 │   │   │   ├── base.py         # SQLAlchemy Base
 │   │   │   └── session.py
 │   │   ├── models/             # SQLAlchemy Models
-│   │   │   ├── user.py
-│   │   │   └── product.py
-│   │   ├── schemas/            # Pydantic Schemas (Request/Response)
-│   │   │   ├── chat.py
-│   │   │   └── token.py
+│   │   ├── schemas/            # Pydantic Schemas
+│   │   ├── services/           # Business Logic (isolating API from DB)
 │   │   └── agents/             # AI Logic
-│   │       ├── tools/          # LangChain Tools
-│   │       └── workflow.py     # LangGraph Definition
-│   ├── tests/                  # Pytest
+│   │       ├── tools/          # LangChain Tools (Retrievers)
+│   │       └── graph.py        # LangGraph StateMachine
+│   ├── tests/                  # Pytest folder (mirrors app structure)
 │   ├── alembic/                # DB Migrations
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-├── Docs/                       # Documentation
-└── docker-compose.yml
+├── Docs/                       # Documentation (20+ files)
+├── deploy.sh                   # Production Deployment Script
+└── docker-compose.yml          # Local Dev Orchestration
 ```
 
-## 2. Naming Conventions
-
-### 2.1. Frontend
--   **Components**: PascalCase (e.g., `ProductCard.tsx`).
--   **Hooks**: camelCase with 'use' prefix (e.g., `useCart.ts`).
--   **CSS Classes**: kebab-case (Tailwind standard).
-
-### 2.2. Backend
--   **Modules/Files**: snake_case (e.g., `product_service.py`).
--   **Classes**: PascalCase (e.g., `ProductService`).
--   **Variables/Functions**: snake_case (e.g., `get_product_by_id`).
--   **Constants**: UPPER_CASE (e.g., `MAX_RETRY_COUNT`).
+## 2. File Naming Conventions
+-   **React Components**: PascalCase (`ProductCard.tsx`).
+-   **React Hooks**: camelCase (`useCart.ts`).
+-   **Python Modules**: snake_case (`product_service.py`).
+-   **Python Classes**: PascalCase (`ProductService`).
+-   **Database Tables**: snake_case_plural (`order_items`).

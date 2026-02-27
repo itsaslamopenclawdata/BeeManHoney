@@ -1,23 +1,25 @@
-# Performance Service Level Agreements (SLA)
+# Performance SLA
 
-## 1. Latency Targets
+## 1. Latency Targets (P95)
+| Operation | Target | Hard Limit |
+| :--- | :--- | :--- |
+| **Static Assets** | < 50ms | 200ms |
+| **API Read (DB)** | < 100ms | 500ms |
+| **API Write (DB)** | < 200ms | 1s |
+| **Vector Search** | < 300ms | 1s |
+| **LLM Token 1** | < 1.5s | 4s |
 
-| Metric | Target (P95) | Target (P99) | Description |
-| :--- | :--- | :--- | :--- |
-| **API Response (Read)** | 100ms | 300ms | Simple GET requests (Products, Home). |
-| **API Response (Write)** | 200ms | 500ms | Creating orders, updating profile. |
-| **Vector Search** | 300ms | 800ms | Embedding generation + DB Query. |
-| **AI Stream Start** | 1.5s | 3.0s | Time until first text token appears in Chat. |
+## 2. Throughput Capabilities
+-   **Concurrency**: 500 Active Users.
+-   **Chat Capacity**: 50 Simultaneous Streams per Worker Node.
 
-## 2. Throughput & Scalability
--   **Concurrent Users**: 500 active sessions.
--   **Chat Sessions**: 50 concurrent active agents per Worker node.
--   **DB Connections**: Max 100 active connections (Managed by PgBouncer if needed).
+## 3. Monitoring & Alerting
+-   **Uptime**: 99.9% (approx 43m downtime/month).
+-   **Alert Thresholds**:
+    -   CPU Usage > 80% for 5 mins -> **Warning**.
+    -   Error Rate (5xx) > 1% -> **Critical (PagerDuty)**.
+    -   Disk Space < 10% -> **Critical**.
 
-## 3. Availability
--   **Uptime**: 99.9% during business hours (9 AM - 9 PM IST).
--   **Maintenance Window**: 2 AM - 4 AM IST (Sundays).
-
-## 4. Monitoring
--   **Health Check Endpoint**: `GET /health` must return `200 OK` within 50ms.
--   **Alerts**: Slack notification if Error Rate > 2% for 5 minutes.
+## 4. Recovery (RTO/RPO)
+-   **RPO (Data Loss)**: 15 Minutes (Redis Snapshot interval).
+-   **RTO (Recovery Time)**: 10 Minutes (Docker Swarm Scaling).

@@ -1,18 +1,28 @@
-# Vendor & Platform Configuration
+# Vendor & Service Configuration
 
-## 1. OpenAI (LLM Provider)
--   **API Key**: Injected via `OPENAI_API_KEY`.
--   **Models**: `gpt-4-turbo` (Supervisor), `gpt-3.5-turbo` (Sales).
--   **Retry Strategy**: Exponential backoff (1s, 2s, 4s) up to 3 retries.
+## 1. LLM Provider (OpenAI)
+-   **Tier**: Tier 2 (Usage limit $500/mo).
+-   **Models**:
+    -   `gpt-4-turbo-preview` (Supervisor, Recipe): High Intelligence.
+    -   `gpt-3.5-turbo-0125` (Sales, Support): High Speed/Low Cost.
+    -   `text-embedding-3-small`: Vector Search.
+-   **Failover**: None (Single Provider). TODO: Add Anthropic as backup.
 
-## 2. LangSmith (Observability)
--   **Project Name**: `beemanhoney-prod`.
--   **Sampling**: Trace 100% of errors, 1% of successes in Prod.
+## 2. Database (self-hosted / Cloud)
+-   **Production**: AWS RDS for PostgreSQL.
+    -   Instance: `db.t3.medium`.
+    -   Storage: 50GB GP3.
+-   **Vector Search**: Requires `pgvector` extension installed on RDS.
 
-## 3. Redis (Cache/Broker)
--   **Persistence**: RDB snapshots every 15 minutes.
--   **Eviction Policy**: `allkeys-lru` (Least Recently Used) for Chat History.
+## 3. Caching (Redis)
+-   **Production**: AWS ElastiCache (Redis OSS).
+    -   Instance: `cache.t3.micro`.
+    -   Mode: Cluster Mode Disabled.
 
-## 4. PostgreSQL (Database)
--   **Connection Pool**: size=20, overflow=10.
--   **Vector Extension**: `pgvector` must be enabled (`CREATE EXTENSION vector;`).
+## 4. Cost Estimates (Monthly)
+| Service | Est Cost | Notes |
+| :--- | :--- | :--- |
+| OpenAI | $50 | Variable based on Traffic. |
+| AWS RDS | $40 | Reserved Instance. |
+| Hosting | $20 | EC2/Vercel Pro. |
+| **Total** | **~$110** | |

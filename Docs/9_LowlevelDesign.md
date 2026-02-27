@@ -1,70 +1,78 @@
 # Low Level Design (LLD)
 
-## 1. Entity Relationship Diagram (ERD)
+## 1. Database Schema (PostgreSQL)
 
-```mermaid
-erDiagram
-    USER ||--o{ ORDER : places
-    USER {
-        uuid id PK
-        string email UK
-        string password_hash
-        string role
-    }
-    PRODUCT ||--o{ ORDER_ITEM : contains
-    PRODUCT {
-        int id PK
-        string name
-        decimal price
-        vector embedding
-        int stock_quantity
-    }
-    ORDER ||--|{ ORDER_ITEM : has
-    ORDER {
-        uuid id PK
-        uuid user_id FK
-        decimal total_amount
-        string status
-        timestamp created_at
-    }
-    ORDER_ITEM {
-        uuid id PK
-        uuid order_id FK
-        int product_id FK
-        int quantity
-        decimal unit_price
-    }
+### 1.1. Core Tables
+
+```sql
+-- ENABLE VECTOR EXTENSION
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- USERS
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100),
+    role VARCHAR(20) DEFAULT 'customer',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- PRODUCTS
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(50),
+    stock_quantity INT DEFAULT 0,
+    image_url TEXT,
+    embedding vector(1536) -- OpenAI text-embedding-3-small
+);
+
+-- HNSW Index for fast vector search
+CREATE INDEX ON products USING hnsw (embedding vector_cosine_ops);
+
+-- ORDERS
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    status VARCHAR(20) DEFAULT 'Processing',
+    total_amount DECIMAL(10, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ORDER ITEMS (Transactional)
+CREATE TABLE order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID REFERENCES orders(id),
+    product_id INT REFERENCES products(id),
+    quantity INT NOT NULL,
+    price_at_purchase DECIMAL(10, 2) NOT NULL
+);
 ```
 
-## 2. Database Schema Details
+## 2. Backend Class Design
 
-### Table: `products`
--   **id**: `SERIAL PRIMARY KEY`
--   **embedding**: `vector(1536)` (Requires `CREATE EXTENSION vector;`)
--   **Index**: `CREATE INDEX ON products USING hnsw (embedding vector_cosine_ops);` (For fast similarity search).
-
-### Table: `users`
--   **id**: `UUID DEFAULT gen_random_uuid()`
--   **role**: `VARCHAR(20) DEFAULT 'customer'` (Values: 'customer', 'admin', 'guest_scanner').
-
-## 3. Class Structure (Python)
-
-### 3.1. LangGraph State
+### 2.1. LangGraph State Definition (`backend/app/agents/state.py`)
 ```python
 class AgentState(TypedDict):
-    input: str
-    chat_history: list[BaseMessage]
-    agent_outcome: Union[AgentAction, AgentFinish, None]
-    intermediate_steps: list[tuple[AgentAction, str]]
+    """The scratchpad for the graph execution."""
+    messages: Annotated[list[BaseMessage], operator.add]
+    next_node: str | None
+    user_id: str
+    cart_items: list[dict]
 ```
 
-### 3.2. Product Service
-```python
-class ProductService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        
-    async def get_similar_products(self, query_vector: list[float], k: int = 5):
-        # SQLAlchemy select statement with ordering by cosine distance
-        pass
-```
+### 2.2. Service Layer Pattern
+We use the Service Repository pattern to decouple FastAPI from SQLAlchemy.
+
+-   **`ProductService`**: Handles RAG logic + DB CRUD.
+-   **`OrderService`**: Handles Transactional commits + Inventory decrement.
+
+## 3. Frontend Component State
+-   **Cart**: Managed via `useContext` (Global) + `localStorage` (Persistence).
+    -   `type CartItem = { product: Product; qty: number }`
+-   **Chat**: Managed via `useChat` hook.
+    -   Maintains `history: Message[]`.
+    -   Handles `EventSource` connection lifecycle.

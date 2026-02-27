@@ -2,51 +2,59 @@
 
 ## 1. Branching Strategy (GitFlow)
 
-```mermaid
-gitGraph
-    commit
-    branch develop
-    checkout develop
-    commit
-    branch feature/auth
-    checkout feature/auth
-    commit
-    commit
-    checkout develop
-    merge feature/auth
-    branch feature/ai-agent
-    checkout feature/ai-agent
-    commit
-    checkout develop
-    merge feature/ai-agent
-    checkout main
-    merge develop tag: "v1.0.0"
+1.  **`main`**: Protected. Production code only. Tags trigger deployment.
+2.  **`develop`**: Protected. Staging integration.
+3.  **`feature/ID-name`**: Short-lived branches. PRs merge to `develop`.
+    -   Example: `feature/auth-login`, `feature/ai-recipe-agent`.
+4.  **`hotfix/ID-name`**: Critical fixes. Branch from `main`, merge to `main` AND `develop`.
+
+## 2. Workflow Steps
+
+### Step 1: Feature Start
+```bash
+git checkout develop
+git pull
+git checkout -b feature/new-logo
 ```
 
-1.  **main**: Production-ready. Deployable.
-2.  **develop**: Staging. All features merge here first.
-3.  **feature/name**: Individual tasks.
+### Step 2: Implementation & Local Test
+-   **Frontend**: `npm run lint` & `npm run test`.
+-   **Backend**: `pytest` & `black .`.
 
-## 2. CI/CD Pipeline Visualization
+### Step 3: Pull Request (PR)
+-   **Title**: `[FE] Add Logo to Header`
+-   **Description**: Link to Jira/Task ID. Screenshots required for UI changes.
+-   **Reviewers**: Min 1 approval required.
 
-```mermaid
-graph LR
-    Push[Git Push] --> Test[Run Tests]
-    Test --> Lint[Lint Check]
-    Lint --> Build[Build Docker]
-    Build --> Deploy[Deploy Staging]
+### Step 4: Merge & deploy
+-   Auto-merge to `develop` on approval.
+-   CI Pipeline builds Docker image (`:dev` tag).
+-   Deploy to Staging server.
+
+## 3. CI/CD Pipeline (GitHub Actions)
+
+### `.github/workflows/ci.yml`
+```yaml
+name: CI
+on: [push, pull_request]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: { python-version: '3.11' }
+      - run: pip install -r backend/requirements.txt
+      - run: pytest backend/tests
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node.js
+        uses: actions/setup-node@v3
+        with: { node-version: '18' }
+      - run: cd Frontend && npm ci && npm test
 ```
-
-## 3. Tooling Configuration
-
-### 3.1. Pre-Commit Hooks
-Configure `.pre-commit-config.yaml` to run:
--   `black` (Python formatting)
--   `ruff` (Python linting)
--   `prettier` (JS/TS formatting)
-
-### 3.2. Code Review Checklist
--   [ ] Are Pydantic models strict?
--   [ ] Are async functions awaited?
--   [ ] Are database sessions closed/yielded correctly?
--   [ ] Does the PR include a migration file if models changed?
