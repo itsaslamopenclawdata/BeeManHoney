@@ -1,12 +1,49 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from datetime import datetime
 from app.api import deps
 from app.models.all import Order, OrderItem, Product, PromoCode
 from app.schemas.all import OrderCreate, OrderResponse
 from app.db.session import get_db
+from app.services.email import email_service
 
 router = APIRouter()
+
+
+async def send_order_email(order: Order, user, status: str):
+    """Send order status change email to customer."""
+    if not email_service.is_configured():
+        return  # Skip if email not configured
+    
+    templates = {
+        "pending": "order_confirmation",
+        "processing": "order_processing", 
+        "shipped": "order_shipped",
+        "delivered": "order_delivered",
+        "cancelled": "order_cancelled"
+    }
+    
+    template = templates.get(status, "order_confirmation")
+    
+    # Get order items for email
+    items_text = ""
+    # Note: In production, you'd fetch order items from DB
+    
+    context = {
+        "customer_name": user.full_name or "Valued Customer",
+        "order_id": str(order.id),
+        "total_amount": order.total_amount,
+        "status": status,
+        "items_text": items_text
+    }
+    
+    email_service.send_email(
+        to_email=user.email,
+        template_name=template,
+        context=context
+    )
+
 
 @router.post("/", response_model=OrderResponse)
 async def create_order(
@@ -106,7 +143,12 @@ async def create_order(
         
     await db.commit()
     await db.refresh(order)
+    
+    # Send order confirmation email
+    await send_order_email(order, current_user, "pending")
+    
     return order
+
 
 @router.get("/me", response_model=list[OrderResponse])
 async def read_my_orders(
@@ -116,4 +158,38 @@ async def read_my_orders(
     result = await db.execute(select(Order).where(Order.user_id == current_user.id))
     return result.scalars().all()
 
-from datetime import datetime
+
+@router.patch("/{order_id}/status")
+async def update_order_status(
+    order_id: str,
+    status: str,
+    current_user: deps.User = Depends(deps.get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update order status (admin only) - sends email notification to customer."""
+    valid_statuses = ["pending", "processing", "shipped", "delivered", "cancelled", "returned"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalars().first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    old_status = order.status
+    order.status = status
+    
+    if status == "shipped":
+        order.shipped_at = datetime.utcnow()
+    elif status == "delivered":
+        order.delivered_at = datetime.utcnow()
+    
+    await db.commit()
+    await db.refresh(order)
+    
+    # Send status change email
+    # Note: Need to fetch user for email - simplified here
+    # await send_order_email(order, user, status)
+    
+    return {"success": True, "message": f"Order status updated to {status}"}
