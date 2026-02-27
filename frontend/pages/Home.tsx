@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -9,29 +9,66 @@ import api from '../services/api';
 interface FeaturedProduct {
   id: number;
   name: string;
+  description: string;
   price: number;
   image_url: string;
+  category: string;
+  is_featured: boolean;
+  is_active: boolean;
 }
 
 const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const categories = [1, 2, 3, 4]; // Placeholders for category loop
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
-    const fetchFeaturedProducts = async () => {
-      try {
-        const { data } = await api.get('/products/featured');
-        setFeaturedProducts(data);
-      } catch (error) {
-        console.error('Failed to fetch featured products', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchFeaturedProducts();
+    updateCartCount();
+    
+    // Listen for cart updates
+    const handleCartUpdate = () => updateCartCount();
+    window.addEventListener('cart-updated', handleCartUpdate);
+    return () => window.removeEventListener('cart-updated', handleCartUpdate);
   }, []);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      const { data } = await api.get('/products/featured');
+      setFeaturedProducts(data);
+    } catch (error) {
+      console.error('Failed to fetch featured products', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const count = cart.reduce((sum: number, item: FeaturedProduct & { quantity?: number }) => 
+      sum + (item.quantity || 1), 0);
+    setCartCount(count);
+  };
+
+  const addToCart = (product: FeaturedProduct) => {
+    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingItem = existingCart.find((item: FeaturedProduct & { id: number }) => item.id === product.id);
+
+    if (existingItem) {
+      existingCart.forEach((item: FeaturedProduct & { quantity?: number }) => {
+        if (item.id === product.id) {
+          item.quantity = (item.quantity || 1) + 1;
+        }
+      });
+    } else {
+      existingCart.push({ ...product, quantity: 1 });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(existingCart));
+    window.dispatchEvent(new Event('cart-updated'));
+  };
+
+  const categories = [1, 2, 3, 4];
 
   return (
     <div className="min-h-screen pb-16 md:pb-0">
@@ -57,22 +94,27 @@ const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* Featured Products */}
+        {/* Featured Products - Dynamic from Admin Dashboard */}
         <section className="py-12 px-4 bg-background" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/hexabump.png')" }}>
           <div className="container mx-auto">
             <h2 className="font-serif text-3xl font-bold text-center mb-8 text-text">Featured Products</h2>
             {loading ? (
-              <div className="text-center py-10">Loading featured products...</div>
+              <div className="text-center py-8">Loading featured products...</div>
             ) : featuredProducts.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">No featured products available.</div>
+              <div className="text-center py-8 text-gray-500">
+                No featured products yet. Admin can mark products as "Featured" from Admin Dashboard.
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {featuredProducts.map((product) => (
                   <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden text-center p-4 transform hover:scale-105 transition-transform duration-300">
-                    <img src={product.image_url || '/assets/logo.png'} alt={product.name} className="w-full h-48 object-cover rounded-lg mx-auto" onError={(e) => { e.currentTarget.src = '/assets/logo.png'; }} />
+                    <img src={product.image_url || '/assets/logo.png'} alt={product.name} className="w-full h-48 object-cover rounded-lg mx-auto" />
                     <h3 className="font-sans font-medium mt-4 text-text">{product.name}</h3>
                     <p className="text-gray-600 mt-1">{formatPrice(product.price)}</p>
-                    <button className="mt-3 w-full bg-primary hover:bg-secondary text-text font-bold py-2 px-4 rounded-full transition-colors">
+                    <button 
+                      onClick={() => addToCart(product)}
+                      className="mt-3 w-full bg-primary hover:bg-secondary text-text font-bold py-2 px-4 rounded-full transition-colors"
+                    >
                       Add To Cart
                     </button>
                   </div>

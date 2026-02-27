@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Package, Users, DollarSign, AlertCircle, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Package, Users, DollarSign, AlertCircle, Plus, Edit, Trash2, X, Star, Eye } from 'lucide-react';
 import { MobileNav } from '../components/MobileNav';
 import api from '../services/api';
 
@@ -32,7 +32,9 @@ const AdminDashboard: React.FC = () => {
     price: 0,
     category: 'Standard',
     stock_quantity: 0,
-    image_url: ''
+    image_url: '',
+    is_featured: false,
+    is_active: true
   });
 
   useEffect(() => {
@@ -51,7 +53,8 @@ const AdminDashboard: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await api.get('/products');
+      // Fetch all products including inactive for admin management
+      const { data } = await api.get('/products?active_only=false');
       setProducts(data);
     } catch (error) {
       console.error('Failed to fetch products', error);
@@ -60,7 +63,8 @@ const AdminDashboard: React.FC = () => {
 
   const toggleFeatured = async (product: Product) => {
     try {
-      await api.patch(`/products/${product.id}`, { is_featured: !product.is_featured });
+      // Use dedicated endpoint for toggling featured status
+      await api.patch(`/products/${product.id}/featured`);
       fetchProducts();
     } catch (error) {
       console.error('Failed to toggle featured status', error);
@@ -86,14 +90,25 @@ const AdminDashboard: React.FC = () => {
       price: 0,
       category: 'Standard',
       stock_quantity: 0,
-      image_url: ''
+      image_url: '',
+      is_featured: false,
+      is_active: true
     });
     setIsModalOpen(true);
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
-    setFormData(product);
+    setFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      stock_quantity: product.stock_quantity,
+      image_url: product.image_url,
+      is_featured: product.is_featured,
+      is_active: product.is_active
+    });
     setIsModalOpen(true);
   };
 
@@ -125,7 +140,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Mock data for charts (since backend analytics returns aggregates only for now)
+  // Mock data for charts
   const salesData = [
     { name: 'Jan', sales: 4000 },
     { name: 'Feb', sales: 3000 },
@@ -190,7 +205,7 @@ const AdminDashboard: React.FC = () => {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Products</dt>
-                  <dd className="text-lg font-medium text-gray-900">12</dd>
+                  <dd className="text-lg font-medium text-gray-900">{products.length}</dd>
                 </dl>
               </div>
             </div>
@@ -253,36 +268,12 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Low Stock Table */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Low Stock Alerts</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">Products with inventory below 10 units.</p>
-          </div>
-          <div className="border-t border-gray-200">
-            <ul className="divide-y divide-gray-200">
-              {stats.low_stock_products.length > 0 ? (
-                stats.low_stock_products.map((item, idx) => (
-                  <li key={idx} className="px-4 py-4 flex items-center justify-between hover:bg-gray-50">
-                    <span className="text-sm font-medium text-indigo-600 truncate">{item}</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                      Restock Now
-                    </span>
-                  </li>
-                ))
-              ) : (
-                <li className="px-4 py-4 text-sm text-gray-500">All inventory levels are healthy.</li>
-              )}
-            </ul>
-          </div>
-        </div>
-
         {/* Products Management */}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg mt-8">
           <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
             <div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">Product Management</h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">Add, edit, or delete products from your catalog.</p>
+              <p className="mt-1 max-w-2xl text-sm text-gray-500">Manage products, pricing, images, featured status, and visibility.</p>
             </div>
             <button
               onClick={handleAddProduct}
@@ -302,14 +293,18 @@ const AdminDashboard: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <Star className="h-4 w-4 inline mr-1" />Featured
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <Eye className="h-4 w-4 inline mr-1" />Active
+                    </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
+                    <tr key={product.id} className={`hover:bg-gray-50 ${!product.is_active ? 'bg-gray-100' : ''}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <img
                           src={product.image_url || '/assets/logo.png'}
@@ -334,20 +329,22 @@ const AdminDashboard: React.FC = () => {
                         {product.stock_quantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <input
-                          type="checkbox"
-                          checked={product.is_featured || false}
-                          onChange={() => toggleFeatured(product)}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-                        />
+                        <button
+                          onClick={() => toggleFeatured(product)}
+                          className={`p-2 rounded-full transition-colors ${product.is_featured ? 'text-yellow-500 bg-yellow-100' : 'text-gray-400 hover:text-gray-600'}`}
+                          title={product.is_featured ? 'Click to remove from featured' : 'Click to mark as featured'}
+                        >
+                          <Star className={`h-5 w-5 ${product.is_featured ? 'fill-current' : ''}`} />
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <input
-                          type="checkbox"
-                          checked={product.is_active || false}
-                          onChange={() => toggleActive(product)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
-                        />
+                        <button
+                          onClick={() => toggleActive(product)}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                          title={product.is_active ? 'Click to hide from customers' : 'Click to show to customers'}
+                        >
+                          {product.is_active ? 'Active' : 'Hidden'}
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
@@ -467,6 +464,34 @@ const AdminDashboard: React.FC = () => {
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="https://example.com/image.jpg"
                   />
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="is_featured"
+                      checked={formData.is_featured}
+                      onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                      className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="is_featured" className="ml-2 block text-sm text-gray-700">
+                      Show on Homepage (Featured)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={formData.is_active}
+                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+                      Visible to Customers
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">
