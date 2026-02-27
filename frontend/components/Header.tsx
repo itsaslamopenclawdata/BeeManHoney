@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Search, ShoppingCart, X, User, LogOut } from 'lucide-react';
+import { Menu, Search, ShoppingCart, X, User, LogOut, Package } from 'lucide-react';
 import api from '../services/api';
 
 export const Header: React.FC = () => {
@@ -96,9 +96,11 @@ export const Header: React.FC = () => {
           
           {isLoggedIn ? (
             <>
+              <Link to="/history" className="text-text hover:text-primary transition-colors" title="My Orders">
+                <Package className="h-6 w-6" />
+              </Link>
               <Link to="/profile" className="text-text hover:text-primary transition-colors hidden md:flex items-center gap-1 font-semibold text-sm">
                 <User className="h-5 w-5" />
-                <span>Profile</span>
               </Link>
               <button 
                 onClick={handleLogout}
@@ -120,7 +122,7 @@ export const Header: React.FC = () => {
             </Link>
           )}
           
-          <Link to="/checkout" aria-label="Shopping Cart" className="text-text hover:text-primary transition-colors relative">
+          <Link to="/cart" aria-label="Shopping Cart" className="text-text hover:text-primary transition-colors relative">
             <ShoppingCart className="h-6 w-6" />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -154,6 +156,7 @@ export const Header: React.FC = () => {
           ))}
           {isLoggedIn ? (
             <>
+              <Link to="/history" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-text hover:text-primary">My Orders</Link>
               <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-text hover:text-primary">Profile</Link>
               <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="text-sm font-semibold text-red-600 text-left">Logout</button>
               {isAdmin && <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-primary">Admin Dashboard</Link>}

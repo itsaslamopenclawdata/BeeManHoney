@@ -21,17 +21,18 @@ const Login: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append('username', email); // FastAPI OAuth2PasswordRequestForm expects 'username'
+      formData.append('username', email);
       formData.append('password', password);
 
       const { data } = await api.post('/auth/token', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' } // Override for OAuth2
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       localStorage.setItem('token', data.access_token);
+      window.dispatchEvent(new Event('auth-change'));
       navigate('/products');
-    } catch (err) {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }
@@ -39,7 +40,6 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans antialiased text-[#6B4F4F]">
-      {/* Desktop Header - Visible on larger screens */}
       <div className="hidden md:block">
         <Header />
       </div>
@@ -69,7 +69,6 @@ const Login: React.FC = () => {
 
           <div className="w-full rounded-3xl bg-white shadow-lg p-8 transition-all duration-300">
             {isScanMode ? (
-              /* Scan Mode UI */
               <div className="flex flex-col items-center animate-fadeIn">
                 <div className="w-full flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-[#6B4F4F]">Scan QR Code</h3>
@@ -80,7 +79,6 @@ const Login: React.FC = () => {
                 <div className="relative w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden mb-6 flex items-center justify-center shadow-inner">
                   <div className="absolute inset-0 border-2 border-primary/50 m-8 rounded-lg animate-pulse"></div>
                   <p className="text-white/70 text-xs text-center px-4">Align the BeeManHoney QR code within the frame to log in.</p>
-                  {/* Mock Camera Feed */}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/10 to-transparent pointer-events-none"></div>
                 </div>
                 <p className="text-sm text-gray-500 mb-6 text-center">
@@ -94,7 +92,6 @@ const Login: React.FC = () => {
                 </button>
               </div>
             ) : (
-              /* Standard Login UI */
               <>
                 <div className="mb-5 text-center">
                   <h3 className="text-xl font-bold text-[#6B4F4F]">Welcome Back!</h3>
@@ -146,30 +143,14 @@ const Login: React.FC = () => {
                     >
                       {isLoading ? 'Logging in...' : 'Login'}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsScanMode(true)}
-                      className="flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#D4AC6E] to-[#B98E54] py-3.5 font-bold text-white shadow-md hover:opacity-90 transition"
-                    >
-                      <QrCode className="h-5 w-5 mr-2" />
-                      Login with Scan Code
-                    </button>
                   </div>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-5 text-center">
                   <p className="text-sm text-gray-500">
                     Don't have an account? <Link to="/signup" className="font-bold text-[#A0522D] hover:underline">Sign Up</Link>
                   </p>
                 </div>
-
-                <div className="mt-8 pt-4 border-t border-gray-100 flex justify-center">
-                  <Link to="/admin-login" className="flex items-center text-xs text-gray-400 hover:text-primary transition-colors">
-                    <ShieldCheck className="w-3 h-3 mr-1" />
-                    Admin Access
-                  </Link>
-                </div>
-
               </>
             )}
           </div>

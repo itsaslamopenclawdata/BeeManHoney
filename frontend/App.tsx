@@ -5,7 +5,8 @@ import About from './pages/About';
 import Sourcing from './pages/Sourcing';
 import Contact from './pages/Contact';
 import Products from './pages/Products';
-import History from './pages/History';
+import Cart from './pages/Cart';
+import OrderHistory from './pages/OrderHistory';
 import Recipes from './pages/Recipes';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -39,7 +40,8 @@ const App: React.FC = () => {
         <Route path="/sourcing" element={<Sourcing />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/products" element={<Products />} />
-        <Route path="/history" element={<History />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/history" element={<OrderHistory />} />
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

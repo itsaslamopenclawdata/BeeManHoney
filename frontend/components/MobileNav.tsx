@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingBag, BookOpen, User, ShoppingCart } from 'lucide-react';
+import { Home, ShoppingBag, BookOpen, User, ShoppingCart, Package } from 'lucide-react';
 
 export const MobileNav: React.FC = () => {
   const [cartCount, setCartCount] = useState(0);
   const location = useLocation();
 
   useEffect(() => {
-    // Load cart count on mount and update when localStorage changes
     const updateCartCount = () => {
       const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
       const totalCount = existingCart.reduce((sum: number, item: any) =>
@@ -16,18 +15,12 @@ export const MobileNav: React.FC = () => {
     };
 
     updateCartCount();
-
-    // Listen for storage events (when cart is updated in other tabs)
-    const handleStorageChange = () => {
-      updateCartCount();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('cart-updated', handleStorageChange);
+    window.addEventListener('storage', updateCartCount);
+    window.addEventListener('cart-updated', updateCartCount);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('cart-updated', handleStorageChange);
+      window.removeEventListener('storage', updateCartCount);
+      window.removeEventListener('cart-updated', updateCartCount);
     };
   }, []);
 
@@ -35,7 +28,7 @@ export const MobileNav: React.FC = () => {
     { name: 'Home', icon: Home, path: '/home' },
     { name: 'Shop', icon: ShoppingBag, path: '/products' },
     { name: 'Recipes', icon: BookOpen, path: '/recipes' },
-    { name: 'Cart', icon: ShoppingCart, path: '/history' }, // Linking cart to history as per design flow roughly
+    { name: 'Cart', icon: ShoppingCart, path: '/cart' },
     { name: 'Profile', icon: User, path: '/login' },
   ];
 
@@ -57,7 +50,6 @@ export const MobileNav: React.FC = () => {
                   <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 h-0.5 w-6 rounded-full bg-primary"></span>
                  )}
                  <item.icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
-                 {/* Show cart badge on Cart icon */}
                  {item.name === 'Cart' && cartCount > 0 && (
                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
                      {cartCount}

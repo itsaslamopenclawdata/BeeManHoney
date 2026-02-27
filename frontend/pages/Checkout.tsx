@@ -12,6 +12,7 @@ interface CartItem {
   price: number;
   quantity: number;
   image_url: string;
+  description?: string;
 }
 
 interface Address {
@@ -42,24 +43,27 @@ const Checkout: React.FC = () => {
     state: '',
     pincode: ''
   });
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
     setCart(cartItems);
-    fetchAddresses();
+    
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchAddresses();
+    }
   }, []);
 
   const fetchAddresses = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (token) {
-        const { data } = await api.get('/addresses', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSavedAddresses(data);
-        if (data.length > 0) {
-          setSelectedAddressId(data[0].id);
-        }
+      const { data } = await api.get('/addresses', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSavedAddresses(data);
+      if (data.length > 0) {
+        setSelectedAddressId(data[0].id);
       }
     } catch (error) {
       console.error('Failed to fetch addresses', error);
@@ -73,10 +77,17 @@ const Checkout: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Please login to place an order');
+      navigate('/login');
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token');
       const shippingAddress = useSavedAddress && selectedAddressId
         ? savedAddresses.find(a => a.id === selectedAddressId)
         : formData;
@@ -99,11 +110,12 @@ const Checkout: React.FC = () => {
       });
 
       localStorage.removeItem('cart');
-      alert('Order placed successfully!');
+      window.dispatchEvent(new Event('cart-updated'));
+      alert('Order placed successfully! Thank you for shopping with BeeManHoney.');
       navigate('/history');
-    } catch (error) {
-      console.error('Order failed', error);
-      alert('Failed to place order. Please try again.');
+    } catch (err: any) {
+      console.error('Order failed', err);
+      setError(err.response?.data?.detail || 'Failed to place order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -127,6 +139,12 @@ const Checkout: React.FC = () => {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-8">
           {/* Left Column - Address & Payment */}
@@ -183,7 +201,7 @@ const Checkout: React.FC = () => {
               {(!useSavedAddress || savedAddresses.length === 0) && (
                 <div className="space-y-4 ml-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                    <label className="block text-sm font-medium text-gray-700">Full Name *</label>
                     <input
                       type="text"
                       required
@@ -193,7 +211,7 @@ const Checkout: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700">Phone *</label>
                     <input
                       type="tel"
                       required
@@ -203,7 +221,7 @@ const Checkout: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Address Line 1</label>
+                    <label className="block text-sm font-medium text-gray-700">Address Line 1 *</label>
                     <input
                       type="text"
                       required
@@ -223,7 +241,7 @@ const Checkout: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">City</label>
+                      <label className="block text-sm font-medium text-gray-700">City *</label>
                       <input
                         type="text"
                         required
@@ -233,7 +251,7 @@ const Checkout: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">State</label>
+                      <label className="block text-sm font-medium text-gray-700">State *</label>
                       <input
                         type="text"
                         required
@@ -244,7 +262,7 @@ const Checkout: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Pincode</label>
+                    <label className="block text-sm font-medium text-gray-700">Pincode *</label>
                     <input
                       type="text"
                       required
@@ -296,7 +314,7 @@ const Checkout: React.FC = () => {
                 {cart.map((item) => (
                   <div key={item.id} className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <img src={item.image_url} alt={item.name} className="w-12 h-12 object-cover rounded mr-3" />
+                      <img src={item.image_url || '/assets/logo.png'} alt={item.name} className="w-12 h-12 object-cover rounded mr-3" />
                       <div>
                         <p className="font-medium text-sm">{item.name}</p>
                         <p className="text-gray-500 text-sm">Qty: {item.quantity}</p>
