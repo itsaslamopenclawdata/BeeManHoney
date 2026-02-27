@@ -19,6 +19,20 @@ const Home: React.FC = () => {
 
   const categories = [1, 2, 3, 4]; // Placeholders for category loop
 
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        const { data } = await api.get('/products/featured');
+        setFeaturedProducts(data);
+      } catch (error) {
+        console.error('Failed to fetch featured products', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeaturedProducts();
+  }, []);
+
   return (
     <div className="min-h-screen pb-16 md:pb-0">
       <Header />
@@ -47,18 +61,24 @@ const Home: React.FC = () => {
         <section className="py-12 px-4 bg-background" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/hexabump.png')" }}>
           <div className="container mx-auto">
             <h2 className="font-serif text-3xl font-bold text-center mb-8 text-text">Featured Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {featuredProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden text-center p-4 transform hover:scale-105 transition-transform duration-300">
-                  <img src={product.image} alt={product.name} className="w-full h-48 object-cover rounded-lg mx-auto" />
-                  <h3 className="font-sans font-medium mt-4 text-text">{product.name}</h3>
-                  <p className="text-gray-600 mt-1">{formatPrice(product.price)}</p>
-                  <button className="mt-3 w-full bg-primary hover:bg-secondary text-text font-bold py-2 px-4 rounded-full transition-colors">
-                    Add To Cart
-                  </button>
-                </div>
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-10">Loading featured products...</div>
+            ) : featuredProducts.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">No featured products available.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {featuredProducts.map((product) => (
+                  <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden text-center p-4 transform hover:scale-105 transition-transform duration-300">
+                    <img src={product.image_url || '/assets/logo.png'} alt={product.name} className="w-full h-48 object-cover rounded-lg mx-auto" onError={(e) => { e.currentTarget.src = '/assets/logo.png'; }} />
+                    <h3 className="font-sans font-medium mt-4 text-text">{product.name}</h3>
+                    <p className="text-gray-600 mt-1">{formatPrice(product.price)}</p>
+                    <button className="mt-3 w-full bg-primary hover:bg-secondary text-text font-bold py-2 px-4 rounded-full transition-colors">
+                      Add To Cart
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

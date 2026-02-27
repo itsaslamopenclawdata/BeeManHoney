@@ -12,6 +12,8 @@ interface Product {
   category: string;
   stock_quantity: number;
   image_url: string;
+  is_featured: boolean;
+  is_active: boolean;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -53,6 +55,26 @@ const AdminDashboard: React.FC = () => {
       setProducts(data);
     } catch (error) {
       console.error('Failed to fetch products', error);
+    }
+  };
+
+  const toggleFeatured = async (product: Product) => {
+    try {
+      await api.patch(`/products/${product.id}`, { is_featured: !product.is_featured });
+      fetchProducts();
+    } catch (error) {
+      console.error('Failed to toggle featured status', error);
+      alert('Failed to update featured status');
+    }
+  };
+
+  const toggleActive = async (product: Product) => {
+    try {
+      await api.patch(`/products/${product.id}`, { is_active: !product.is_active });
+      fetchProducts();
+    } catch (error) {
+      console.error('Failed to toggle active status', error);
+      alert('Failed to update active status');
     }
   };
 
@@ -280,6 +302,8 @@ const AdminDashboard: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -308,6 +332,22 @@ const AdminDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {product.stock_quantity}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <input
+                          type="checkbox"
+                          checked={product.is_featured || false}
+                          onChange={() => toggleFeatured(product)}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <input
+                          type="checkbox"
+                          checked={product.is_active || false}
+                          onChange={() => toggleActive(product)}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
