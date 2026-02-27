@@ -27,6 +27,8 @@ class Product(Base):
     category = Column(String, index=True)
     stock_quantity = Column(Integer, default=0)
     image_url = Column(String)
+    is_featured = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
     # embedding column requires pgvector, handled via raw SQL or TypeDecorator if needed
     # For now, we omit the explicit Mapped column for embedding in ORM to avoid complexity if pgvector types aren't installed locally
     

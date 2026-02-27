@@ -26,6 +26,8 @@ class ProductBase(BaseModel):
     category: Optional[str] = None
     stock_quantity: int = 0
     image_url: Optional[str] = None
+    is_featured: bool = False
+    is_active: bool = True
 
 class ProductCreate(ProductBase):
     pass

@@ -14,12 +14,28 @@ async def read_products(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
+    active_only: bool = True,
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Product)
+    if active_only:
+        query = query.where(Product.is_active == True)
     if search:
         query = query.where(Product.name.ilike(f"%{search}%"))
     query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.get("/featured", response_model=List[ProductResponse])
+async def read_featured_products(
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Product).where(
+        Product.is_featured == True,
+        Product.is_active == True
+    ).offset(skip).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -61,6 +77,22 @@ async def update_product(
     for field, value in product_in.dict(exclude_unset=True).items():
         setattr(product, field, value)
     
+    await db.commit()
+    await db.refresh(product)
+    return product
+
+@router.patch("/{product_id}/featured", response_model=ProductResponse)
+async def toggle_featured(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: deps.User = Depends(deps.get_current_admin)
+):
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalars().first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    product.is_featured = not product.is_featured
     await db.commit()
     await db.refresh(product)
     return product

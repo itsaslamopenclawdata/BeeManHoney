@@ -1,31 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { MobileNav } from '../components/MobileNav';
 import { formatPrice } from '../utils/currency';
+import api from '../services/api';
+
+interface FeaturedProduct {
+  id: number;
+  name: string;
+  price: number;
+  image_url: string;
+}
 
 const Home: React.FC = () => {
-  const featuredProducts = [
-    {
-      id: 1,
-      name: 'Organic Raw Honey Jar',
-      price: 450,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBl_0-N7TLqcy9Ieah-ZLMyZAPpL8ee5W7CUIESHNWv11QRt8R4S7IBXeZVA5Jnzdihv3mX0HZMhEMx0ZtyBH5An13MOlJMsrcOhGvleKvWKRR35UY5FCRiXroAzVSmInp0IRD4W9xU9K4-ojqzgP_jQyCHk1P2w84FOCNSMf2XP6SvXqEr0eUQaqi6qPB6qCJ1CR_KMQgGSY1MLBGSLoswEuN3EevIqw2EN_8RuLlSNTjzfGCtnGSYzlgLLx8ut_APkqGOm6TC43z8'
-    },
-    {
-      id: 2,
-      name: 'Manuka Honey UMF 15+',
-      price: 1800,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDiMIdd1FdF1swfyrrPQGMjMHJFaCrUFCIRqE-DZzYYZJovEF8Nv5iK4AC5Pkfn9XdrURVIzlE8KJ4aOOUhJ9YA6N_6afMxshu0gx4dASmDtYV0SGbxo6Ro4gsoy3fmoO1l0Ve4G_zY-u0A42ZMUsfwiNedK9g0GHQyPuPnSx1j-LitPuu2yzR-SjzU4OL71lvFdnWWClqoirErWHwr0UplzLLPjCBJd4ywA3OKYLTEkpQzHSDYh1mdJQ3FieC68L7vTIyzDoXZZhxZ'
-    },
-    {
-      id: 3,
-      name: 'Bee Pollen Granules',
-      price: 750,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBCLjXSZRzlaPiPS7V-fop43ZT284C7EsCc-EN0_zNTt6qicYsGX28aTEr9Dff1CI77LNOz1czsJaOShAA2O3UEvRmjItN7Kdk6Nmyj-tGk_Z6Suar2ewd7cx3LwVcIn4Me0Tz-6IyMIck_w7cr0M28hBYaX-GfcwuZCSStmlHci0Q0cPkBE4iZZqBqzp_A1OI_AQvCLbEuy4UR6wNpISuOrvy3h8jWo9V6DBEPuNvmQnWlFtNyHCBHzAC2U73Oq9ZlkC2_rdHBqrji'
-    }
-  ];
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = [1, 2, 3, 4]; // Placeholders for category loop
 
